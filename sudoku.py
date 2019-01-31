@@ -16,8 +16,12 @@ class Area:
 
     def append(self, value):
         if len(self.area) >= 9:
-            raise IndexError('The max number of elements allowed is 9')
+            raise IndexError('The max number of elements allowed is 9.')
         self.area.append(value)
+
+    def validate(self, value):
+        if value in self:
+            raise ValueError('The value is already in the area.')
 
     def __getitem__(self, key):
         return self.area[key]
@@ -50,11 +54,11 @@ class Box(Area):
         return i, j
 
     def __str__(self):
-        l1 = '| ' + ' | '.join(str(c) for c in self.area[:3]) + ' |'
-        l2 = '| ' + ' | '.join(str(c) for c in self.area[3:6]) + ' |'
-        l3 = '| ' + ' | '.join(str(c) for c in self.area[6:]) + ' |'
-
-        return '\n'.join([l1, l2, l3])
+        return '\n'.join([
+            '| ' + ' | '.join(str(c) for c in self.area[:3]) + ' |',
+            '| ' + ' | '.join(str(c) for c in self.area[3:6]) + ' |',
+            '| ' + ' | '.join(str(c) for c in self.area[6:]) + ' |',
+        ])
 
 
 class Grid:
@@ -67,7 +71,6 @@ class Grid:
         # Fill lines
         self.lines = [Line(i).fill(l) for i, l in enumerate(self.grid)]
 
-
         # Transpose Grid
         cols = []
         for j in range(0, 9):
@@ -77,16 +80,16 @@ class Grid:
         self.columns = [Column(j).fill(c) for j, c in enumerate(cols)]
 
         box_list = []
-        for box_id in range(0,9):
+        for box_id in range(0, 9):
             box = []
-            for v in range(0, 9):
+            for value in range(0, 9):
                 # position of the box
                 start_i = (box_id // 3) * 3
                 start_j = (box_id % 3) * 3
 
                 # position inside the box
-                relative_i = v // 3
-                relative_j = v % 3
+                relative_i = value // 3
+                relative_j = value % 3
 
                 # position inside the grid
                 i = start_i + relative_i
@@ -97,21 +100,37 @@ class Grid:
         # Fill boxes
         self.boxes = [Box(i).fill(b) for i, b in enumerate(box_list)]
 
+        # Register validators
+        for i, line in enumerate(self.grid):
+            for j, cell in enumerate(line):
+                box_id = (i - i % 3) + j // 3
+                cell.validators = [
+                    self.lines[i],
+                    self.columns[j],
+                    self.boxes[box_id],
+                ]
+
     def __str__(self):
-        return '\n'.join(str(l) for l in self.lines)
+        return '\n'.join(str(line) for line in self.lines)
 
     def __getitem__(self, key):
         return self.lines[key]
 
 
 class Cell:
-    def __init__(self, posi, posj, value=0, possible_values=[]):
+    def __init__(self, posi, posj, value=0, possible_values=None):
+        self.validators = []
         self.posi = posi
         self.posy = posj
         self.value = value
-        self.possible_values = possible_values
+        self.possible_values = possible_values or []
+
+    def validate(self, value):
+        for validator in self.validators:
+            validator.validate(value)
 
     def set_value(self, value):
+        self.validate(value)
         self.value = value
 
     def get_value(self):
@@ -120,8 +139,7 @@ class Cell:
     def __str__(self):
         if self.value:
             return str(self.value)
-        else:
-            return ' '
+        return ' '
 
     def __repr__(self):
         return self.__str__()
