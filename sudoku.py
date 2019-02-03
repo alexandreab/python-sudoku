@@ -62,12 +62,28 @@ class Box(Area):
 
 
 class Grid:
-    def __init__(self):
+    def __init__(self, grid_data=None):
 
         self.grid = []
-        for i in range(0, 9):
-            self.grid.append([Cell(i, j) for j in range(0, 9)])
+        if grid_data and type(grid_data) is list:
+            for i, l in enumerate(grid_data):
+                self.grid.append([Cell(i, j, int(v)) for j,v in enumerate(l)])
+        else:
+            for i in range(0, 9):
+                self.grid.append([Cell(i, j) for j in range(0, 9)])
 
+        self.map_grid()
+        self.register_validators()
+
+    @property
+    def data(self):
+        data = []
+        for line in self.grid:
+            l = [c.get_value() for c in line]
+            data.append(l)
+        return data
+
+    def map_grid(self):
         # Fill lines
         self.lines = [Line(i).fill(l) for i, l in enumerate(self.grid)]
 
@@ -100,7 +116,7 @@ class Grid:
         # Fill boxes
         self.boxes = [Box(i).fill(b) for i, b in enumerate(box_list)]
 
-        # Register validators
+    def register_validators(self):
         for i, line in enumerate(self.grid):
             for j, cell in enumerate(line):
                 box_id = (i - i % 3) + j // 3
@@ -118,23 +134,41 @@ class Grid:
 
 
 class Cell:
-    def __init__(self, posi, posj, value=0, possible_values=None):
+    def __init__(self, posi: int, posj: int, value: int = 0):
         self.validators = []
         self.posi = posi
-        self.posy = posj
+        self.posj = posj
         self.value = value
-        self.possible_values = possible_values or []
 
-    def validate(self, value):
+    def validate(self, value: int):
         for validator in self.validators:
             validator.validate(value)
 
-    def set_value(self, value):
+    def empty(self):
+        if self.value==0:
+            return True
+        else:
+            return False
+
+    def set_value(self, value: int):
         self.validate(value)
-        self.value = value
+        self.value = int(value)
 
     def get_value(self):
         return self.value
+
+    @property
+    def possible_values(self):
+        possibilities = []
+
+        if not self.value:
+            for i in range(1,10):
+                try:
+                    self.validate(i)
+                    possibilities.append(i)
+                except ValueError:
+                    continue
+        return possibilities
 
     def __str__(self):
         if self.value:
@@ -142,4 +176,4 @@ class Cell:
         return ' '
 
     def __repr__(self):
-        return self.__str__()
+        return '{{({},{}): {}}}'.format(self.posi, self.posj, self.value)
