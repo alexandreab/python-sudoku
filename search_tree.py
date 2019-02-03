@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 
-from copy import deepcopy
-from queue import LifoQueue, Queue
+from queue import PriorityQueue, Queue
 
 from sudoku import Grid
 
 class Punter:
-    def __init__(self, grid=None):
+    def __init__(self, grid, queue_class=None):
+        if not queue_class:
+            queue_class = PriorityQueue
         self.solved = Queue()
-        self.pending = LifoQueue()
+        self.pending = queue_class()
         self.pending.put(grid)
 
     def play(self, max_iter: int = 10000):
         i = 0
-        while i<max_iter and not self.pending.empty():
+        while i<max_iter and not self.pending.empty() and self.solved.empty():
             grid = self.pending.get()
             self.guess(grid)
             i += 1
@@ -37,7 +38,6 @@ class Punter:
         else:
             easiest_cell = unsolved[0]
             for value in easiest_cell.possible_values:
-                #data = deepcopy(grid.grid)
                 new_grid = Grid(grid.data)
                 i = easiest_cell.posi
                 j = easiest_cell.posj

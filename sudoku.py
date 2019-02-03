@@ -83,6 +83,10 @@ class Grid:
             data.append(l)
         return data
 
+    @property
+    def empty_values(self):
+        return len([c in l for l in self.grid for c in l if c.empty()])
+
     def map_grid(self):
         # Fill lines
         self.lines = [Line(i).fill(l) for i, l in enumerate(self.grid)]
@@ -131,6 +135,12 @@ class Grid:
 
     def __getitem__(self, key):
         return self.lines[key]
+
+    def __cmp__(self, other):
+        return cmp(self.empty_values, other.empty_values)
+
+    def __lt__(self, other):
+        return bool(self.empty_values < other.empty_values)
 
 
 class Cell:
