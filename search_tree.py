@@ -1,10 +1,13 @@
-#!/usr/bin/env python3
+"""Sudoku'grids search tree module."""
 
 from queue import PriorityQueue, Queue
 
 from sudoku import Grid
 
-class Punter:
+
+class Searcher:
+    """Class that implements methods to find valid sudoku grids."""
+
     def __init__(self, grid, queue_class=None):
         if not queue_class:
             queue_class = PriorityQueue
@@ -13,20 +16,26 @@ class Punter:
         self.pending.put(grid)
 
     def play(self, max_iter: int = 10000):
+        """Iterate over possibilites storing valid grids found."""
+
         i = 0
-        while i<max_iter and not self.pending.empty() and self.solved.empty():
+        while (i < max_iter and
+               not self.pending.empty() and
+               self.solved.empty()):
             grid = self.pending.get()
-            self.guess(grid)
+            self.search(grid)
             i += 1
         return i
 
-    def guess(self, grid):
+    def search(self, grid):
+        """Do a depth first search for valid grid values."""
+
         cells = [c for l in grid.lines for c in l]
-        sorted_cells = sorted(cells, key=lambda c:len(c.possible_values))
+        sorted_cells = sorted(cells, key=lambda c: len(c.possible_values))
         unsolved = []
         for cell in sorted_cells:
             possibles = cell.possible_values
-            if not cell.empty():
+            if not cell.empty:
                 continue
             elif possibles == 1:
                 cell.set_value(possibles[0])
